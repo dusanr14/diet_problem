@@ -1,0 +1,5 @@
+# depslib dependency file v1.0
+1647304558 source:c:\users\dusan\desktop\diet_problem\diet_problem\main.cpp
+	<iostream>
+	<fstream>
+
