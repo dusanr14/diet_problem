@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#define NUMOFVAR 3
+#define NUMOFVAR 5
 #define NUMOFSLACK 3
 #define ROWSIZE (NUMOFSLACK+1)
 #define COLSIZE (NUMOFSLACK+NUMOFVAR+1)
@@ -27,7 +27,7 @@ bool isUnbounded(float wv[ROWSIZE][COLSIZE],int pivotCol)
 int main()
 {
     fstream myFile;
-    myFile.open("baza.txt",ios::in); //otvaram fajl u read modu
+    myFile.open("diet.txt",ios::in); //otvaram fajl u read modu
     float wv[ROWSIZE][COLSIZE];
 
     if(myFile.is_open())
@@ -42,8 +42,9 @@ int main()
             }
         }
     }
+    myFile.close();
 
-    /* ispis matrice, kao neka provera
+   // ispis matrice, kao neka provera
     for(int j=0;j<ROWSIZE;j++)
         {
             for(int i=0;i<COLSIZE;i++)
@@ -53,7 +54,7 @@ int main()
             cout<<endl;
         }
         cout<<endl<<endl<<endl;
-    */
+
 
     float rat[ROWSIZE-1];
     float minnegval;
