@@ -12,51 +12,34 @@
 #define ROWSIZE (NUMOFSLACK+1)
 #define COLSIZE (NUMOFSLACK+NUMOFVAR+1)
 
-#define WIDTH 36
+#define WIDTH 25
 #define FIXED_POINT 16
 using namespace std;
 
 typedef sc_dt::sc_fixed_fast<WIDTH,FIXED_POINT> num_t;
 typedef sc_dt::sc_fix_fast num_t_matrix[ROWSIZE][COLSIZE];
 
-
-//typedef std::vector<num_t> array_temp;
-//typedef std::vector<double> orig_array_t;
-
-
-//for the matrix
-//
-//typedef std::vector< vector<num_t> > mat_t;
-//typedef std::vector< vector<float> > orig_mat_t;
-
 num_t wv_fixed[ROWSIZE][COLSIZE];
 //od_profesora//num_t* wv_fixed;
 num_t pivot_fixed;
 
-//mat_t fixed_matrix;
-//second parameter changer=d, d = matrix member (not array), i push back in matrix whole array
 void copy2fix(num_t wv_fixed[ROWSIZE][COLSIZE],const float wv[ROWSIZE][COLSIZE], int W, int F)
 {
-	//cout<<"Pocinje copy2fix"<<endl;
+	
 	for (int j=0; j<ROWSIZE; j++)
 	{
 		for(int i=0; i<COLSIZE; i++)
 		{
 		num_t d;
 		d = wv[j][i];
-		//cout<<wv[j][i]<<" "<<d<<" ";
 		if (d.overflow_flag())
 			std::cout << "Overflow in conversion.\n";
 		
-		//PROBLEM!!!
 		wv_fixed[j][i] = d;
 		//od_profesora//wv_fixed[i*ROWSIZE+j] = d;
-		//cout<<wv_fixed[j][i]<<endl;
-		//cout<<wv_fixed[j][i]<<" "<<wv[j][i]<< endl;
 		}
 
 	}
-	//while(1);
 }
 
 bool passCheck(const num_t wv_fixed[ROWSIZE][COLSIZE], const float wv[ROWSIZE][COLSIZE],
@@ -172,6 +155,7 @@ int findPivotRow(float wv[ROWSIZE][COLSIZE],int pivotCol)
         }
         return loc;
 }
+//doPivoting function with fixed_point matrix
 void doPivoting(num_t wv[ROWSIZE][COLSIZE],int pivotRow,int pivotCol,num_t pivot)
 {
     num_t newRow[COLSIZE];
@@ -188,6 +172,39 @@ void doPivoting(num_t wv[ROWSIZE][COLSIZE],int pivotRow,int pivotCol,num_t pivot
         {
             pcv = wv[j][pivotCol];
             pivotColVal[j]=pcv;
+        }
+
+        for(int j=0;j<ROWSIZE;j++)
+        {
+            if(j==pivotRow)
+            {
+                for(int i=0;i<COLSIZE;i++)
+                {
+                    wv[j][i]=wv[j][i]/pivot;
+                }
+            }
+            else
+            {
+                for(int i=0;i<COLSIZE;i++)
+                {
+                    wv[j][i]=wv[j][i]-newRow[i]*pivotColVal[j];
+                }
+            }
+        }
+}
+//doPivoting for float
+void doPivoting_float(float wv[ROWSIZE][COLSIZE],int pivotRow,int pivotCol,float pivot)
+{
+    float newRow[COLSIZE];
+    float pivotColVal[ROWSIZE];
+    for(int i=0;i<COLSIZE;i++)
+        {
+            newRow[i]=wv[pivotRow][i]/pivot;
+        }
+
+        for(int j=0;j<ROWSIZE;j++)
+        {
+            pivotColVal[j]=wv[j][pivotCol];
         }
 
         for(int j=0;j<ROWSIZE;j++)
@@ -253,7 +270,8 @@ void simplexCalculate(float wv[ROWSIZE][COLSIZE])
     float pivot;
 
     //float solVar[NUMOFVAR];
-
+    
+    
     while(!checkOptimality(wv))
     {
         pivotCol=findPivotCol(wv);
@@ -269,12 +287,11 @@ void simplexCalculate(float wv[ROWSIZE][COLSIZE])
 
         pivot=wv[pivotRow][pivotCol];
         
-	// ulaze u funkciju promenim da su fixed
-	
+	// doPivoting parameters float-> fixed
 	copy2fix(wv_fixed,wv, WIDTH,FIXED_POINT);
 	pivot_fixed = pivot;
-        doPivoting(wv_fixed,pivotRow,pivotCol,pivot_fixed);
         
+        doPivoting(wv_fixed,pivotRow,pivotCol,pivot_fixed);
         for(int j=0;j<ROWSIZE; j++)
 	{
 		for(int i =0;i<COLSIZE;i++)
@@ -299,10 +316,90 @@ void simplexCalculate(float wv[ROWSIZE][COLSIZE])
     }
 }
 
+void doPivoting_orig(float wv[ROWSIZE][COLSIZE],int pivotRow,int pivotCol,float pivot)
+{
+    float newRow[COLSIZE];
+    float pivotColVal[ROWSIZE];
+    for(int i=0;i<COLSIZE;i++)
+        {
+            newRow[i]=wv[pivotRow][i]/pivot;
+        }
+
+        for(int j=0;j<ROWSIZE;j++)
+        {
+            pivotColVal[j]=wv[j][pivotCol];
+        }
+
+        for(int j=0;j<ROWSIZE;j++)
+        {
+            if(j==pivotRow)
+            {
+                for(int i=0;i<COLSIZE;i++)
+                {
+                    wv[j][i]=wv[j][i]/pivot;
+                }
+            }
+            else
+            {
+                for(int i=0;i<COLSIZE;i++)
+                {
+                    wv[j][i]=wv[j][i]-newRow[i]*pivotColVal[j];
+                }
+            }
+        }
+}
+
+void simplexCalculate_orig(float wv[ROWSIZE][COLSIZE])
+{
+
+    //float minnegval;
+    //float minpozval;
+    //int loc;
+    int pivotRow;
+    int pivotCol;
+    bool unbounded=false;
+    float pivot;
+
+    //float solVar[NUMOFVAR];
+
+    while(!checkOptimality(wv))
+    {
+        pivotCol=findPivotCol(wv);
+
+        if(isUnbounded(wv,pivotCol))
+        {
+            unbounded=true;
+            break;
+        }
+
+
+        pivotRow=findPivotRow(wv,pivotCol);
+
+        pivot=wv[pivotRow][pivotCol];
+
+        doPivoting_orig(wv,pivotRow,pivotCol,pivot);
+        //print(wv);
+
+    }
+    //Ispisivanje rezultata
+    if(unbounded)
+    {
+        cout<<"Unbounded"<<endl;
+    }
+    else
+    {
+        //print(wv);
+
+        solutions(wv);
+
+    }
+}
+
 int sc_main(int argc, char*argv[])
 {
  
     float wv[ROWSIZE][COLSIZE];
+    float wv_cpy[ROWSIZE][COLSIZE];
 	for(int j=0;j<ROWSIZE; j++)
 	{
 		for(int i =0;i<COLSIZE;i++)
@@ -318,9 +415,28 @@ int sc_main(int argc, char*argv[])
 			wv[j][NUMOFVAR+j]=1;
 		}
 	}
+	
+	for(int j=0;j<ROWSIZE; j++)
+	{
+		for(int i =0;i<COLSIZE;i++)
 
-
-        simplexCalculate(wv);
+		{
+			wv_cpy[j][i]=wv[j][i];
+		}
+	}
+	simplexCalculate_orig(wv);
+        simplexCalculate(wv_cpy);
+        
+        cout<<endl;
+        cout<<"With float: "<<wv[ROWSIZE-1][COLSIZE-1]<<endl<<"With fixed: "<<wv_cpy[ROWSIZE-1][COLSIZE-1]<<endl;
+        if(wv[ROWSIZE-1][COLSIZE-1] < wv_cpy[ROWSIZE-1][COLSIZE-1])
+        {
+        	cout<<"greska u %: "<<1 - (wv[ROWSIZE-1][COLSIZE-1]/ wv_cpy[ROWSIZE-1][COLSIZE-1])<<endl;
+        }
+        else
+        {
+        	cout<<"greska u %: "<<1 - (wv_cpy[ROWSIZE-1][COLSIZE-1]/ wv[ROWSIZE-1][COLSIZE-1])<<endl;
+        }
     return 0;
 }
 
