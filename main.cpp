@@ -12,7 +12,7 @@
 #define ROWSIZE (NUMOFSLACK+1)
 #define COLSIZE (NUMOFSLACK+NUMOFVAR+1)
 
-#define WIDTH 25
+#define WIDTH 26
 #define FIXED_POINT 16
 using namespace std;
 
@@ -22,6 +22,7 @@ typedef sc_dt::sc_fix_fast num_t_matrix[ROWSIZE][COLSIZE];
 num_t wv_fixed[ROWSIZE][COLSIZE];
 //od_profesora//num_t* wv_fixed;
 num_t pivot_fixed;
+static int iter = 1;
 
 void copy2fix(num_t wv_fixed[ROWSIZE][COLSIZE],const float wv[ROWSIZE][COLSIZE], int W, int F)
 {
@@ -42,20 +43,29 @@ void copy2fix(num_t wv_fixed[ROWSIZE][COLSIZE],const float wv[ROWSIZE][COLSIZE],
 	}
 }
 
-bool passCheck(const num_t wv_fixed[ROWSIZE][COLSIZE], const float wv[ROWSIZE][COLSIZE],
+bool passCheck(const float wv[ROWSIZE][COLSIZE], const float wv_cpy[ROWSIZE][COLSIZE],
 			    double delta)
 {
-	
-	
-	for (size_t j = 0; j != ROWSIZE; ++j)
-	{
-		for (size_t i = 0; i != COLSIZE; ++i)
-		{
-		if (std::abs(wv_fixed[j][i] - wv[j][i]) > delta)
-			return false;
-		}
-	}
-	return true;
+	double miss;
+	if(wv[ROWSIZE-1][COLSIZE-1] < wv_cpy[ROWSIZE-1][COLSIZE-1])
+        {
+        	miss = (1 - (wv[ROWSIZE-1][COLSIZE-1]/ wv_cpy[ROWSIZE-1][COLSIZE-1])) * 100;
+        }
+        else
+        {
+        	miss = ( 1- (wv_cpy[ROWSIZE-1][COLSIZE-1]/ wv[ROWSIZE-1][COLSIZE-1])) * 100;
+        }
+        cout<< "Sa floating point vrednostima: "<<wv[ROWSIZE-1][COLSIZE-1]<<endl;
+        cout<< "Sa ficed point vrednostima: "<<wv_cpy[ROWSIZE-1][COLSIZE-1]<<endl;
+        cout<<"Greska u procentima: "<<miss<<endl;
+	 if(miss < delta)
+	 {
+	 	return true;
+	 }
+	 else
+	 {
+	 	return false;
+	 }
 }
 
 bool checkOptimality(float wv[ROWSIZE][COLSIZE])
@@ -88,11 +98,12 @@ void print(float wv[ROWSIZE][COLSIZE])
         }
         cout<<endl<<endl<<endl;
 }
-void makeMatrix(float wv[ROWSIZE][COLSIZE])
+/*void makeMatrix(float wv[ROWSIZE][COLSIZE])
 {
-
+	
 	fstream myFile;
-    myFile.open("baza.txt",ios::in); //otvaram fajl u read modu
+	
+        myFile.open("baza.txt",ios::in); //otvaram fajl u read modu
 	if(myFile.is_open())
     {
         for(int j = 0; j < ROWSIZE; j++)
@@ -108,7 +119,37 @@ void makeMatrix(float wv[ROWSIZE][COLSIZE])
 		}
     }
     myFile.close();
+}
+*/
+void matrixZero(float wv[ROWSIZE][COLSIZE])
+{
+	for(int j=0;j<ROWSIZE; j++)
+	{
+		for(int i =0;i<COLSIZE;i++)
+		{
+			wv[j][i]=0;
+		}
+	}
+}
+void addOnesDiagonal(float wv[ROWSIZE][COLSIZE])
+{
+	for(int j=0;j<ROWSIZE-1;j++)
+	{
+		{
+			wv[j][NUMOFVAR+j]=1;
+		}
+	}
+}
 
+void copyMatrix(float wv_cpy[ROWSIZE][COLSIZE],float wv[ROWSIZE][COLSIZE])
+{
+	for(int j=0;j<ROWSIZE; j++)
+	{
+		for(int i =0;i<COLSIZE;i++)
+		{
+			wv_cpy[j][i]=wv[j][i];
+		}
+	}
 }
 int findPivotCol(float wv[ROWSIZE][COLSIZE])
 {
@@ -311,7 +352,7 @@ void simplexCalculate(float wv[ROWSIZE][COLSIZE])
     {
         //print(wv);
 
-        solutions(wv);
+        //solutions(wv);
 
     }
 }
@@ -388,9 +429,9 @@ void simplexCalculate_orig(float wv[ROWSIZE][COLSIZE])
     }
     else
     {
-        //print(wv);
+        
 
-        solutions(wv);
+        //solutions(wv);
 
     }
 }
@@ -399,44 +440,311 @@ int sc_main(int argc, char*argv[])
 {
  
     float wv[ROWSIZE][COLSIZE];
+    float wv2[ROWSIZE][COLSIZE];
     float wv_cpy[ROWSIZE][COLSIZE];
-	for(int j=0;j<ROWSIZE; j++)
-	{
-		for(int i =0;i<COLSIZE;i++)
-		{
-			wv[j][i]=0;
-		}
-	}
-
-	makeMatrix(wv);
-	for(int j=0;j<ROWSIZE-1;j++)
-	{
-		{
-			wv[j][NUMOFVAR+j]=1;
-		}
-	}
+    float wv2_cpy[ROWSIZE][COLSIZE];
 	
-	for(int j=0;j<ROWSIZE; j++)
-	{
-		for(int i =0;i<COLSIZE;i++)
-
+	matrixZero(wv);
+	fstream myFile;
+	
+        myFile.open("baza.txt",ios::in); //otvaram fajl u read modu
+	if(myFile.is_open())
+    {
+        for(int j = 0; j < ROWSIZE; j++)
+        {
+            for(int i = 0; i< NUMOFVAR; i++)
+            {
+              myFile >> wv[j][i];
+            }
+        }
+		for(int j = 0;j< NUMOFSLACK;j++)
 		{
-			wv_cpy[j][i]=wv[j][i];
-		}
-	}
+			myFile >> wv[j][COLSIZE-1];
+		}		
+	
+    }
+   
+	addOnesDiagonal(wv);
+	copyMatrix(wv_cpy,wv);
+	simplexCalculate_orig(wv);
+        simplexCalculate(wv_cpy);
+        if(passCheck(wv, wv_cpy,0.8))
+        	cout<<"TRUE";
+        else
+        	cout<<"FALSE"<<endl;
+        
+        cout<<endl<<endl<<"SAD ZA 2"<<endl<<endl;
+        
+	////////////////////////////////////////////////////////2222222222222
+	matrixZero(wv);
+	        
+        if(myFile.is_open())
+    {
+        for(int j = 0; j < ROWSIZE; j++)
+
+        {
+            for(int i = 0; i< NUMOFVAR; i++)
+            {
+              myFile >> wv[j][i];
+            }
+        }
+		for(int j = 0;j< NUMOFSLACK;j++)
+		{
+			myFile >> wv[j][COLSIZE-1];
+		}		
+	
+    }
+    	addOnesDiagonal(wv);
+	copyMatrix(wv_cpy,wv);
 	simplexCalculate_orig(wv);
         simplexCalculate(wv_cpy);
         
-        cout<<endl;
-        cout<<"With float: "<<wv[ROWSIZE-1][COLSIZE-1]<<endl<<"With fixed: "<<wv_cpy[ROWSIZE-1][COLSIZE-1]<<endl;
-        if(wv[ROWSIZE-1][COLSIZE-1] < wv_cpy[ROWSIZE-1][COLSIZE-1])
-        {
-        	cout<<"greska u %: "<<1 - (wv[ROWSIZE-1][COLSIZE-1]/ wv_cpy[ROWSIZE-1][COLSIZE-1])<<endl;
-        }
+        if(passCheck(wv, wv_cpy,0.8))
+        	cout<<"TRUE";
         else
+        	cout<<"FALSE";
+        	
+        cout<<endl;
+        ////////////////////////////////////////////////////3333333333
+	matrixZero(wv);
+	        
+        if(myFile.is_open())
+    {
+        for(int j = 0; j < ROWSIZE; j++)
+
         {
-        	cout<<"greska u %: "<<1 - (wv_cpy[ROWSIZE-1][COLSIZE-1]/ wv[ROWSIZE-1][COLSIZE-1])<<endl;
+            for(int i = 0; i< NUMOFVAR; i++)
+            {
+              myFile >> wv[j][i];
+            }
         }
+		for(int j = 0;j< NUMOFSLACK;j++)
+		{
+			myFile >> wv[j][COLSIZE-1];
+		}		
+	
+    }
+    	addOnesDiagonal(wv);
+	copyMatrix(wv_cpy,wv);
+	simplexCalculate_orig(wv);
+        simplexCalculate(wv_cpy);
+        
+        if(passCheck(wv, wv_cpy,0.8))
+        	cout<<"TRUE";
+        else
+        	cout<<"FALSE";
+        	
+        cout<<endl;
+        ////////////////////////////////////////////////////444444
+	matrixZero(wv);
+	        
+        if(myFile.is_open())
+    {
+        for(int j = 0; j < ROWSIZE; j++)
+
+        {
+            for(int i = 0; i< NUMOFVAR; i++)
+            {
+              myFile >> wv[j][i];
+            }
+        }
+		for(int j = 0;j< NUMOFSLACK;j++)
+		{
+			myFile >> wv[j][COLSIZE-1];
+		}		
+	
+    }
+    	addOnesDiagonal(wv);
+	copyMatrix(wv_cpy,wv);
+	simplexCalculate_orig(wv);
+        simplexCalculate(wv_cpy);
+        
+        if(passCheck(wv, wv_cpy,0.8))
+        	cout<<"TRUE";
+        else
+        	cout<<"FALSE";
+        	
+        cout<<endl;
+                ////////////////////////////////////////////////////55555555
+	matrixZero(wv);
+	        
+        if(myFile.is_open())
+    {
+        for(int j = 0; j < ROWSIZE; j++)
+
+        {
+            for(int i = 0; i< NUMOFVAR; i++)
+            {
+              myFile >> wv[j][i];
+            }
+        }
+		for(int j = 0;j< NUMOFSLACK;j++)
+		{
+			myFile >> wv[j][COLSIZE-1];
+		}		
+	
+    }
+    	addOnesDiagonal(wv);
+	copyMatrix(wv_cpy,wv);
+	simplexCalculate_orig(wv);
+        simplexCalculate(wv_cpy);
+        
+        if(passCheck(wv, wv_cpy,0.8))
+        	cout<<"TRUE";
+        else
+        	cout<<"FALSE";
+        	
+        cout<<endl;
+                ////////////////////////////////////////////////////66666
+	matrixZero(wv);
+	        
+        if(myFile.is_open())
+    {
+        for(int j = 0; j < ROWSIZE; j++)
+
+        {
+            for(int i = 0; i< NUMOFVAR; i++)
+            {
+              myFile >> wv[j][i];
+            }
+        }
+		for(int j = 0;j< NUMOFSLACK;j++)
+		{
+			myFile >> wv[j][COLSIZE-1];
+		}		
+	
+    }
+    	addOnesDiagonal(wv);
+	copyMatrix(wv_cpy,wv);
+	simplexCalculate_orig(wv);
+        simplexCalculate(wv_cpy);
+        
+        if(passCheck(wv, wv_cpy,0.8))
+        	cout<<"TRUE";
+        else
+        	cout<<"FALSE";
+        	
+        cout<<endl;
+                ////////////////////////////////////////////////////77777
+	matrixZero(wv);
+	        
+        if(myFile.is_open())
+    {
+        for(int j = 0; j < ROWSIZE; j++)
+
+        {
+            for(int i = 0; i< NUMOFVAR; i++)
+            {
+              myFile >> wv[j][i];
+            }
+        }
+		for(int j = 0;j< NUMOFSLACK;j++)
+		{
+			myFile >> wv[j][COLSIZE-1];
+		}		
+	
+    }
+    	addOnesDiagonal(wv);
+	copyMatrix(wv_cpy,wv);
+	simplexCalculate_orig(wv);
+        simplexCalculate(wv_cpy);
+        
+        if(passCheck(wv, wv_cpy,0.8))
+        	cout<<"TRUE";
+        else
+        	cout<<"FALSE";
+        	
+        cout<<endl;
+                ////////////////////////////////////////////////////88888
+	matrixZero(wv);
+	        
+        if(myFile.is_open())
+    {
+        for(int j = 0; j < ROWSIZE; j++)
+
+        {
+            for(int i = 0; i< NUMOFVAR; i++)
+            {
+              myFile >> wv[j][i];
+            }
+        }
+		for(int j = 0;j< NUMOFSLACK;j++)
+		{
+			myFile >> wv[j][COLSIZE-1];
+		}		
+	
+    }
+    	addOnesDiagonal(wv);
+	copyMatrix(wv_cpy,wv);
+	simplexCalculate_orig(wv);
+        simplexCalculate(wv_cpy);
+        
+        if(passCheck(wv, wv_cpy,0.8))
+        	cout<<"TRUE";
+        else
+        	cout<<"FALSE";
+        	
+        cout<<endl;
+                ////////////////////////////////////////////////////99999
+	matrixZero(wv);
+	        
+        if(myFile.is_open())
+    {
+        for(int j = 0; j < ROWSIZE; j++)
+
+        {
+            for(int i = 0; i< NUMOFVAR; i++)
+            {
+              myFile >> wv[j][i];
+            }
+        }
+		for(int j = 0;j< NUMOFSLACK;j++)
+		{
+			myFile >> wv[j][COLSIZE-1];
+		}		
+	
+    }
+    	addOnesDiagonal(wv);
+	copyMatrix(wv_cpy,wv);
+	simplexCalculate_orig(wv);
+        simplexCalculate(wv_cpy);
+        
+        if(passCheck(wv, wv_cpy,0.8))
+        	cout<<"TRUE";
+        else
+        	cout<<"FALSE";
+        	
+        cout<<endl;
+                ////////////////////////////////////////////////////1010101010
+	matrixZero(wv);
+	        
+        if(myFile.is_open())
+    {
+        for(int j = 0; j < ROWSIZE; j++)
+
+        {
+            for(int i = 0; i< NUMOFVAR; i++)
+            {
+              myFile >> wv[j][i];
+            }
+        }
+		for(int j = 0;j< NUMOFSLACK;j++)
+		{
+			myFile >> wv[j][COLSIZE-1];
+		}		
+	
+    }
+    	addOnesDiagonal(wv);
+	copyMatrix(wv_cpy,wv);
+	simplexCalculate_orig(wv);
+        simplexCalculate(wv_cpy);
+        
+        if(passCheck(wv, wv_cpy,0.8))
+        	cout<<"TRUE";
+        else
+        	cout<<"FALSE";
+        	
+        cout<<endl;
     return 0;
 }
 
