@@ -13,7 +13,7 @@
 #define COLSIZE (NUMOFSLACK+NUMOFVAR+1)
 
 #define WIDTH 26
-#define FIXED_POINT 16
+#define FIXED_POINT 15
 using namespace std;
 
 typedef sc_dt::sc_fixed_fast<WIDTH,FIXED_POINT> num_t;
@@ -233,39 +233,7 @@ void doPivoting(num_t wv[ROWSIZE][COLSIZE],int pivotRow,int pivotCol,num_t pivot
             }
         }
 }
-//doPivoting for float
-void doPivoting_float(float wv[ROWSIZE][COLSIZE],int pivotRow,int pivotCol,float pivot)
-{
-    float newRow[COLSIZE];
-    float pivotColVal[ROWSIZE];
-    for(int i=0;i<COLSIZE;i++)
-        {
-            newRow[i]=wv[pivotRow][i]/pivot;
-        }
 
-        for(int j=0;j<ROWSIZE;j++)
-        {
-            pivotColVal[j]=wv[j][pivotCol];
-        }
-
-        for(int j=0;j<ROWSIZE;j++)
-        {
-            if(j==pivotRow)
-            {
-                for(int i=0;i<COLSIZE;i++)
-                {
-                    wv[j][i]=wv[j][i]/pivot;
-                }
-            }
-            else
-            {
-                for(int i=0;i<COLSIZE;i++)
-                {
-                    wv[j][i]=wv[j][i]-newRow[i]*pivotColVal[j];
-                }
-            }
-        }
-}
 void solutions(float wv[ROWSIZE][COLSIZE])
 {
     for(int i=0;i<NUMOFVAR; i++)  //every basic column has the values, get it form B array
@@ -440,311 +408,51 @@ int sc_main(int argc, char*argv[])
 {
  
     float wv[ROWSIZE][COLSIZE];
-    float wv2[ROWSIZE][COLSIZE];
     float wv_cpy[ROWSIZE][COLSIZE];
-    float wv2_cpy[ROWSIZE][COLSIZE];
+    bool pc;
+    bool provera = true;
 	
-	matrixZero(wv);
 	fstream myFile;
 	
         myFile.open("baza.txt",ios::in); //otvaram fajl u read modu
-	if(myFile.is_open())
-    {
-        for(int j = 0; j < ROWSIZE; j++)
+        for(int iter = 0; iter < 10; iter++)
         {
-            for(int i = 0; i< NUMOFVAR; i++)
-            {
-              myFile >> wv[j][i];
-            }
-        }
+        matrixZero(wv);
+	if(myFile.is_open())
+        {
+        	for(int j = 0; j < ROWSIZE; j++)
+        	{
+            		for(int i = 0; i< NUMOFVAR; i++)
+            		{
+            			  myFile >> wv[j][i];
+            		}
+      	 	 }
 		for(int j = 0;j< NUMOFSLACK;j++)
 		{
 			myFile >> wv[j][COLSIZE-1];
 		}		
 	
-    }
+   	 }
    
 	addOnesDiagonal(wv);
 	copyMatrix(wv_cpy,wv);
 	simplexCalculate_orig(wv);
         simplexCalculate(wv_cpy);
-        if(passCheck(wv, wv_cpy,0.8))
-        	cout<<"TRUE";
-        else
-        	cout<<"FALSE"<<endl;
-        
-        cout<<endl<<endl<<"SAD ZA 2"<<endl<<endl;
-        
-	////////////////////////////////////////////////////////2222222222222
-	matrixZero(wv);
-	        
-        if(myFile.is_open())
-    {
-        for(int j = 0; j < ROWSIZE; j++)
-
-        {
-            for(int i = 0; i< NUMOFVAR; i++)
-            {
-              myFile >> wv[j][i];
-            }
-        }
-		for(int j = 0;j< NUMOFSLACK;j++)
-		{
-			myFile >> wv[j][COLSIZE-1];
-		}		
-	
-    }
-    	addOnesDiagonal(wv);
-	copyMatrix(wv_cpy,wv);
-	simplexCalculate_orig(wv);
-        simplexCalculate(wv_cpy);
-        
-        if(passCheck(wv, wv_cpy,0.8))
+        if(pc = passCheck(wv, wv_cpy,0.5))
         	cout<<"TRUE";
         else
         	cout<<"FALSE";
-        	
-        cout<<endl;
-        ////////////////////////////////////////////////////3333333333
-	matrixZero(wv);
-	        
-        if(myFile.is_open())
-    {
-        for(int j = 0; j < ROWSIZE; j++)
-
-        {
-            for(int i = 0; i< NUMOFVAR; i++)
-            {
-              myFile >> wv[j][i];
-            }
+        cout<<endl<<"pc = "<<pc<<endl;
+        provera = provera && pc;
+        cout<<endl<<endl;
         }
-		for(int j = 0;j< NUMOFSLACK;j++)
-		{
-			myFile >> wv[j][COLSIZE-1];
-		}		
 	
-    }
-    	addOnesDiagonal(wv);
-	copyMatrix(wv_cpy,wv);
-	simplexCalculate_orig(wv);
-        simplexCalculate(wv_cpy);
-        
-        if(passCheck(wv, wv_cpy,0.8))
-        	cout<<"TRUE";
-        else
-        	cout<<"FALSE";
-        	
-        cout<<endl;
-        ////////////////////////////////////////////////////444444
-	matrixZero(wv);
-	        
-        if(myFile.is_open())
-    {
-        for(int j = 0; j < ROWSIZE; j++)
-
-        {
-            for(int i = 0; i< NUMOFVAR; i++)
-            {
-              myFile >> wv[j][i];
-            }
-        }
-		for(int j = 0;j< NUMOFSLACK;j++)
-		{
-			myFile >> wv[j][COLSIZE-1];
-		}		
-	
-    }
-    	addOnesDiagonal(wv);
-	copyMatrix(wv_cpy,wv);
-	simplexCalculate_orig(wv);
-        simplexCalculate(wv_cpy);
-        
-        if(passCheck(wv, wv_cpy,0.8))
-        	cout<<"TRUE";
-        else
-        	cout<<"FALSE";
-        	
-        cout<<endl;
-                ////////////////////////////////////////////////////55555555
-	matrixZero(wv);
-	        
-        if(myFile.is_open())
-    {
-        for(int j = 0; j < ROWSIZE; j++)
-
-        {
-            for(int i = 0; i< NUMOFVAR; i++)
-            {
-              myFile >> wv[j][i];
-            }
-        }
-		for(int j = 0;j< NUMOFSLACK;j++)
-		{
-			myFile >> wv[j][COLSIZE-1];
-		}		
-	
-    }
-    	addOnesDiagonal(wv);
-	copyMatrix(wv_cpy,wv);
-	simplexCalculate_orig(wv);
-        simplexCalculate(wv_cpy);
-        
-        if(passCheck(wv, wv_cpy,0.8))
-        	cout<<"TRUE";
-        else
-        	cout<<"FALSE";
-        	
-        cout<<endl;
-                ////////////////////////////////////////////////////66666
-	matrixZero(wv);
-	        
-        if(myFile.is_open())
-    {
-        for(int j = 0; j < ROWSIZE; j++)
-
-        {
-            for(int i = 0; i< NUMOFVAR; i++)
-            {
-              myFile >> wv[j][i];
-            }
-        }
-		for(int j = 0;j< NUMOFSLACK;j++)
-		{
-			myFile >> wv[j][COLSIZE-1];
-		}		
-	
-    }
-    	addOnesDiagonal(wv);
-	copyMatrix(wv_cpy,wv);
-	simplexCalculate_orig(wv);
-        simplexCalculate(wv_cpy);
-        
-        if(passCheck(wv, wv_cpy,0.8))
-        	cout<<"TRUE";
-        else
-        	cout<<"FALSE";
-        	
-        cout<<endl;
-                ////////////////////////////////////////////////////77777
-	matrixZero(wv);
-	        
-        if(myFile.is_open())
-    {
-        for(int j = 0; j < ROWSIZE; j++)
-
-        {
-            for(int i = 0; i< NUMOFVAR; i++)
-            {
-              myFile >> wv[j][i];
-            }
-        }
-		for(int j = 0;j< NUMOFSLACK;j++)
-		{
-			myFile >> wv[j][COLSIZE-1];
-		}		
-	
-    }
-    	addOnesDiagonal(wv);
-	copyMatrix(wv_cpy,wv);
-	simplexCalculate_orig(wv);
-        simplexCalculate(wv_cpy);
-        
-        if(passCheck(wv, wv_cpy,0.8))
-        	cout<<"TRUE";
-        else
-        	cout<<"FALSE";
-        	
-        cout<<endl;
-                ////////////////////////////////////////////////////88888
-	matrixZero(wv);
-	        
-        if(myFile.is_open())
-    {
-        for(int j = 0; j < ROWSIZE; j++)
-
-        {
-            for(int i = 0; i< NUMOFVAR; i++)
-            {
-              myFile >> wv[j][i];
-            }
-        }
-		for(int j = 0;j< NUMOFSLACK;j++)
-		{
-			myFile >> wv[j][COLSIZE-1];
-		}		
-	
-    }
-    	addOnesDiagonal(wv);
-	copyMatrix(wv_cpy,wv);
-	simplexCalculate_orig(wv);
-        simplexCalculate(wv_cpy);
-        
-        if(passCheck(wv, wv_cpy,0.8))
-        	cout<<"TRUE";
-        else
-        	cout<<"FALSE";
-        	
-        cout<<endl;
-                ////////////////////////////////////////////////////99999
-	matrixZero(wv);
-	        
-        if(myFile.is_open())
-    {
-        for(int j = 0; j < ROWSIZE; j++)
-
-        {
-            for(int i = 0; i< NUMOFVAR; i++)
-            {
-              myFile >> wv[j][i];
-            }
-        }
-		for(int j = 0;j< NUMOFSLACK;j++)
-		{
-			myFile >> wv[j][COLSIZE-1];
-		}		
-	
-    }
-    	addOnesDiagonal(wv);
-	copyMatrix(wv_cpy,wv);
-	simplexCalculate_orig(wv);
-        simplexCalculate(wv_cpy);
-        
-        if(passCheck(wv, wv_cpy,0.8))
-        	cout<<"TRUE";
-        else
-        	cout<<"FALSE";
-        	
-        cout<<endl;
-                ////////////////////////////////////////////////////1010101010
-	matrixZero(wv);
-	        
-        if(myFile.is_open())
-    {
-        for(int j = 0; j < ROWSIZE; j++)
-
-        {
-            for(int i = 0; i< NUMOFVAR; i++)
-            {
-              myFile >> wv[j][i];
-            }
-        }
-		for(int j = 0;j< NUMOFSLACK;j++)
-		{
-			myFile >> wv[j][COLSIZE-1];
-		}		
-	
-    }
-    	addOnesDiagonal(wv);
-	copyMatrix(wv_cpy,wv);
-	simplexCalculate_orig(wv);
-        simplexCalculate(wv_cpy);
-        
-        if(passCheck(wv, wv_cpy,0.8))
-        	cout<<"TRUE";
-        else
-        	cout<<"FALSE";
-        	
-        cout<<endl;
+	cout<<endl;
+	if(provera)
+		cout<<" resenje UPADA u opseg delta"<<endl;
+	else
+		cout<<" resenje NE UPADA!!! u opseg delta"<<endl;
+	 
     return 0;
 }
 
